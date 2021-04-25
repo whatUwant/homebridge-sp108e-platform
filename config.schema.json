@@ -101,6 +101,12 @@
               "type": "integer",
               "required": true,
               "minimum": 1
+            },
+            "debug": {
+              "title": "Debug",
+              "type": "boolean",
+              "default": false,
+              "description": "Show debug logs in Homebridge"
             }
           }
         }
