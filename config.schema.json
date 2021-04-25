@@ -42,6 +42,65 @@
               "required": true,
               "placeholder": "eg. Bedroom LED",
               "description": "Name of the LED controller"
+            },
+            "chip": {
+              "title": "Chip Type",
+              "type": "string",
+              "required": true,
+              "enum": [
+                "SM16703",
+                "TM1804",
+                "UCS1903",
+                "WS2811",
+                "WS2801",
+                "SK6812",
+                "LPD6803",
+                "LPD8806",
+                "APA102",
+                "APA105",
+                "DMX512",
+                "TM1914",
+                "TM1913",
+                "P9813",
+                "INK1003",
+                "P943S",
+                "P9411",
+                "P9413",
+                "TX1812",
+                "TX1813",
+                "GS8206",
+                "GS8208",
+                "SK9822",
+                "TM1814",
+                "SK6812_RGBW",
+                "P9414",
+                "P9412"
+              ]
+            },
+            "colorOrder": {
+              "title": "Order of RGB Channels",
+              "type": "string",
+              "required": true,
+              "enum": [
+                "RGB",
+                "RBG",
+                "GRB",
+                "GBR",
+                "BRG",
+                "BGR"
+              ]
+            }, 
+            "segments": {
+              "title": "Number of Segments",
+              "type": "integer",
+              "required": true,
+              "minimum": 1
+            }, 
+            "ledsPerSegment": {
+              "title": "Number of LEDs per Segment",
+              "type": "integer",
+              "required": true,
+              "minimum": 1
             }
           }
         }

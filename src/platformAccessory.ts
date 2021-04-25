@@ -22,7 +22,7 @@ export class Sp108ePlatformAccessory {
 
   private lastPull!: Date;
   private deviceStatus!: sp108eStatus;
-  private dreamModeOn: boolean;
+  private dreamModeOn!: boolean;
 
   constructor(
     private readonly platform: Sp108ePlatform,
@@ -31,7 +31,6 @@ export class Sp108ePlatformAccessory {
     // instantiate sp108e
     this.device = new sp108e(accessory.context.device);
 
-    this.dreamModeOn = false;
     this.initialize(accessory.context.device);
 
     this.sync();
@@ -96,6 +95,8 @@ export class Sp108ePlatformAccessory {
   }
 
   async initialize({ chip, colorOrder, segments, ledsPerSegment }) {
+    this.dreamModeOn = false;
+
     await this.pullStatus();
 
     const chipIndex = CHIP_TYPES.indexOf(chip);

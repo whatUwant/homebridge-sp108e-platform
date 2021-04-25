@@ -215,7 +215,7 @@ export default class sp108e {
    */
   setDreamMode = async (mode) => {
     let truncated = Math.min(mode, 180);
-    truncated = Math.max(truncated, 1); // TODO: find out what this is
+    truncated = Math.max(truncated, 1);
     return await this.send(CMD_SET_DREAM_MODE, this.intToHex(mode - 1), 0);
   };
 
