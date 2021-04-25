@@ -7,10 +7,10 @@
   "license": "Apache-2.0",
   "repository": {
     "type": "git",
-    "url": "git://github.com/whatUwant/homebridge-sp108e.git"
+    "url": "git://github.com/whatUwant/homebridge-sp108e-platform.git"
   },
   "bugs": {
-    "url": "https://github.com/whatUwant/homebridge-sp108e/issues"
+    "url": "https://github.com/whatUwant/homebridge-sp108e-platform/issues"
   },
   "engines": {
     "node": ">=10.17.0",
