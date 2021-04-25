@@ -1,5 +1,5 @@
 {
-  "pluginAlias": "ExampleHomebridgePlugin",
+  "pluginAlias": "SP108EPlatform",
   "pluginType": "platform",
   "singular": true,
   "schema": {
@@ -9,7 +9,42 @@
         "title": "Name",
         "type": "string",
         "required": true,
-        "default": "Example Dynamic Platform"
+        "default": "SP108EPlatform",
+        "description": "Plugin name as displayed in the Homebridge log"
+      },
+      "devices": {
+        "title": "Devices",
+        "type": "array",
+        "required": true,
+        "items": {
+          "title": "Device",
+          "type": "object",
+          "properties": {
+            "host": {
+              "title": "Host",
+              "type": "string",
+              "required": true,
+              "placeholder": "e.g. 192.168.7.126",
+              "description": "Host / IP address of the LED controller"
+            },
+            "port": {
+              "title": "Port",
+              "type": "integer",
+              "required": true,
+              "placeholder": "e.g. 8189",
+              "default": 8189,
+              "description": "Port of the LED controller",
+              "maximum": 65535
+            },
+            "name": {
+              "title": "Name",
+              "type": "string",
+              "required": true,
+              "placeholder": "eg. Bedroom LED",
+              "description": "Name of the LED controller"
+            }
+          }
+        }
       }
     }
   }
