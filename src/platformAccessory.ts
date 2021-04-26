@@ -7,7 +7,7 @@ import { MANUFACTURER, MODEL } from './settings';
 import { CHIP_TYPES, RGBW_CHIP_TYPES } from './lib/chipTypes';
 import { COLOR_ORDERS } from './lib/colorOrders';
 
-const PULL_INTERVAL = 1000;
+const POLL_INTERVAL = 1000;
 
 /**
  * Platform Accessory
@@ -30,6 +30,8 @@ export class Sp108ePlatformAccessory {
     private readonly accessory: PlatformAccessory,
   ) {
     this.debug = accessory.context.device.debug;
+
+    this.platform.log.info(accessory.context.device);
 
     // instantiate sp108e
     this.device = new sp108e(accessory.context.device);
@@ -100,26 +102,30 @@ export class Sp108ePlatformAccessory {
   async initialize({ chip, colorOrder, segments, ledsPerSegment }) {
     this.dreamModeOn = false;
 
-    await this.pullStatus();
+    await this.pollStatus();
+    if (typeof this.deviceStatus === 'undefined') {
+      this.platform.log.error('Unable to poll status during initialization');
+      return;
+    }
 
     const chipIndex = CHIP_TYPES.indexOf(chip);
-    if (this.deviceStatus.icType !== chipIndex) {
+    if (this.deviceStatus?.icType !== chipIndex) {
       this.debug && this.platform.log.info('setting chip type ->', chip);
       await this.device.setChipType(chip);
     }
 
     const colorOrderIndex = COLOR_ORDERS.indexOf(colorOrder);
-    if (this.deviceStatus.colorOrder !== colorOrderIndex) {
+    if (this.deviceStatus?.colorOrder !== colorOrderIndex) {
       this.debug && this.platform.log.info('setting color order ->', colorOrder);
       await this.device.setColorOrder(colorOrder);
     }
 
-    if (this.deviceStatus.numberOfSegments !== segments) {
+    if (this.deviceStatus?.numberOfSegments !== segments) {
       this.debug && this.platform.log.info('setting segments ->', segments);
       await this.device.setSegments(segments);
     }
 
-    if (this.deviceStatus.ledsPerSegment !== ledsPerSegment) {
+    if (this.deviceStatus?.ledsPerSegment !== ledsPerSegment) {
       this.debug && this.platform.log.info('setting LEDs per segment ->', ledsPerSegment);
       await this.device.setLedsPerSegment(ledsPerSegment);
     }
@@ -127,11 +133,11 @@ export class Sp108ePlatformAccessory {
 
   sync() {
     setInterval(async () => {
-      await this.pullStatus();
-    }, PULL_INTERVAL);
+      await this.pollStatus();
+    }, POLL_INTERVAL);
   }
 
-  async pullStatus() {
+  async pollStatus() {
     try {
       this.deviceStatus = await this.device.getStatus();
       this.lastPull = new Date();
@@ -143,7 +149,7 @@ export class Sp108ePlatformAccessory {
   isOutOfSync() {
     return this.deviceStatus === undefined ||
       this.lastPull === undefined ||
-      (new Date().getUTCMilliseconds()) - this.lastPull.getUTCMilliseconds() > PULL_INTERVAL;
+      (new Date().getUTCMilliseconds()) - this.lastPull.getUTCMilliseconds() > POLL_INTERVAL;
   }
 
   async setOn(value: CharacteristicValue) {

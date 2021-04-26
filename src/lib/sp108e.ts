@@ -66,8 +66,6 @@ export interface sp108eStatus {
 }
 
 export default class sp108e {
-  private debug = false;
-
   constructor(private readonly options: sp108eOptions) {
     this.options = options;
   }
