@@ -1,11 +1,11 @@
-export const ANIMATION_MODE_METEOR = 'cd';
-export const ANIMATION_MODE_BREATHING = 'ce';
-export const ANIMATION_MODE_WAVE = 'd1';
-export const ANIMATION_MODE_CATCHUP = 'd4';
-export const ANIMATION_MODE_STATIC = 'd3';
-export const ANIMATION_MODE_STACK = 'cf';
-export const ANIMATION_MODE_FLASH = 'd2';
-export const ANIMATION_MODE_FLOW = 'd0';
+export const ANIMATION_MODE_METEOR = 205;
+export const ANIMATION_MODE_BREATHING = 206;
+export const ANIMATION_MODE_STACK = 207;
+export const ANIMATION_MODE_FLOW = 208;
+export const ANIMATION_MODE_WAVE = 209;
+export const ANIMATION_MODE_FLASH = 210;
+export const ANIMATION_MODE_STATIC = 211;
+export const ANIMATION_MODE_CATCHUP = 212;
 
 export const ANIMATION_MODES = {
   [ANIMATION_MODE_STATIC]: 'STATIC',

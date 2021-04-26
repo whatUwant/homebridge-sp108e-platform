@@ -49,7 +49,6 @@ export interface sp108eStatus {
   rawResponse: string;
   on: boolean;
   animationMode: number;
-  animationModeName: string;
   animationSpeed: number;
   animationSpeedPercentage: number;
   brightness: number;
@@ -130,7 +129,6 @@ export default class sp108e {
       rawResponse: response,
       on: response.substring(2, 4) === '01',
       animationMode: parseInt(response.substring(4, 6), 16),
-      animationModeName: ANIMATION_MODES[response.substring(4, 6).toLowerCase()] ?? 'Unknown',
       animationSpeed: parseInt(response.substring(6, 8), 16),
       animationSpeedPercentage: parseInt(response.substring(6, 8), 16) / 255 * 100,
       brightness: parseInt(response.substring(8, 10), 16),
@@ -182,17 +180,17 @@ export default class sp108e {
   setColor = async (hexColor: string) => {
     const status = await this.getStatus();
     if (status.animationMode === 0) {
-      await this.send(CMD_SET_ANIMATION_MODE, ANIMATION_MODE_STATIC);
+      await this.send(CMD_SET_ANIMATION_MODE, this.intToHex(ANIMATION_MODE_STATIC));
     }
     return await this.send(CMD_SET_COLOR, hexColor, 0);
   };
 
   /**
    * Sets the animation mode of the leds (for single color mode)
-   * @param {string} animationMode Use one of the ANIMATION_MODE_XXXX constants. Defaults to ANIMATION_MODE_STATIC
+   * @param {number} animationMode Use one of the ANIMATION_MODE_XXXX constants. Defaults to ANIMATION_MODE_STATIC
    */
-  setAnimationMode = async (animationMode: string) => {
-    return await this.send(CMD_SET_ANIMATION_MODE, animationMode);
+  setAnimationMode = async (animationMode: number) => {
+    return await this.send(CMD_SET_ANIMATION_MODE, this.intToHex(animationMode));
   };
 
   /**
