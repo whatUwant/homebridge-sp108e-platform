@@ -25,6 +25,8 @@ export class Sp108ePlatformAccessory {
 
   private lastPull!: Date;
   private deviceStatus!: sp108eStatus;
+  private targetHue!: number | undefined;
+  private targetSaturation!: number | undefined;
   private animationOn!: boolean;
 
   constructor(
@@ -248,11 +250,24 @@ export class Sp108ePlatformAccessory {
     return brightness;
   }
 
+  async setColor() {
+    const colorHex = colorConvert.hsv.hex([this.targetHue as number, this.targetSaturation as number, this.deviceStatus.hsv.value]);
+    this.debug && this.platform.log.info('Converted color from HSV to HEX ->', { h: this.targetHue, s: this.targetSaturation }, colorHex);
+    await this.device.setColor(colorHex);
+    this.targetHue = undefined;
+    this.targetSaturation = undefined;
+  }
+
   async setHue(value: CharacteristicValue) {
     try {
       this.debug && this.platform.log.info('Set Characteristic Hue ->', value);
-      const colorHex = colorConvert.hsv.hex([value as number, this.deviceStatus.hsv.saturation, this.deviceStatus.hsv.value]);
-      await this.device.setColor(colorHex);
+      this.targetHue = value as number;
+
+      if (this.targetSaturation === undefined) {
+        return;
+      }
+
+      await this.setColor();
     } catch (e) {
       throw new this.platform.api.hap.HapStatusError(this.platform.api.hap.HAPStatus.SERVICE_COMMUNICATION_FAILURE);
     }
@@ -275,8 +290,13 @@ export class Sp108ePlatformAccessory {
   async setSaturation(value: CharacteristicValue) {
     try {
       this.debug && this.platform.log.info('Set Characteristic Saturation ->', value);
-      const colorHex = colorConvert.hsv.hex([this.deviceStatus.hsv.hue, value as number, this.deviceStatus.hsv.value]);
-      await this.device.setColor(colorHex);
+      this.targetSaturation = value as number;
+
+      if (this.targetHue === undefined) {
+        return;
+      }
+
+      await this.setColor();
     } catch (e) {
       throw new this.platform.api.hap.HapStatusError(this.platform.api.hap.HAPStatus.SERVICE_COMMUNICATION_FAILURE);
     }
