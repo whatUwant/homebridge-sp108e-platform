@@ -1,5 +1,8 @@
 # homebridge-sp108e-platform
 
+[![version](https://img.shields.io/npm/v/homebridge-sp108e-platform.svg)](https://www.npmjs.com/package/homebridge-sp108e-platform)
+[![downloads](https://img.shields.io/npm/dt/homebridge-sp108e-platform.svg)](https://www.npmjs.com/package/homebridge-sp108e-platform)
+
 A homebridge plugin for integrating SP108E LED controllers into HomeKit.
 
 ## Features
