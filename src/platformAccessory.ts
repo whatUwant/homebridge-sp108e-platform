@@ -42,10 +42,6 @@ export class Sp108ePlatformAccessory {
     // instantiate sp108e
     this.device = new sp108e(accessory.context.device);
 
-    this.initialize(accessory.context.device);
-
-    this.sync();
-
     const serialNumberBase = `${accessory.context.device.host}:${accessory.context.device.port}`;
 
     // set accessory information
@@ -62,22 +58,18 @@ export class Sp108ePlatformAccessory {
       this.accessory.addService(this.platform.Service.Lightbulb, rgbServiceName, `${serialNumberBase}/rgb`);
 
     this.rgbService.getCharacteristic(this.platform.Characteristic.On)
-      .onSet(this.setOn.bind(this))
-      .onGet(this.getOn.bind(this));
+      .onSet(this.setOn.bind(this));
 
     this.rgbService.getCharacteristic(this.platform.Characteristic.Brightness)
-      .onSet(this.setBrightness.bind(this))
-      .onGet(this.getBrightness.bind(this));
+      .onSet(this.setBrightness.bind(this));
 
     this.rgbService
       .getCharacteristic(this.platform.Characteristic.Hue)
-      .onSet(this.setHue.bind(this))
-      .onGet(this.getHue.bind(this));
+      .onSet(this.setHue.bind(this));
 
     this.rgbService
       .getCharacteristic(this.platform.Characteristic.Saturation)
-      .onSet(this.setSaturation.bind(this))
-      .onGet(this.getSaturation.bind(this));
+      .onSet(this.setSaturation.bind(this));
 
     // white led
     if (RGBW_CHIP_TYPES.includes(accessory.context.device?.chip)) {
@@ -86,8 +78,7 @@ export class Sp108ePlatformAccessory {
         this.accessory.addService(this.platform.Service.Lightbulb, wServiceName, `${serialNumberBase}/w`);
 
       this.wService.getCharacteristic(this.platform.Characteristic.Brightness)
-        .onSet(this.setWhiteBrightness.bind(this))
-        .onGet(this.getWhiteBrightness.bind(this));
+        .onSet(this.setWhiteBrightness.bind(this));
     }
 
     // animation speed
@@ -97,13 +88,11 @@ export class Sp108ePlatformAccessory {
 
     this.asService
       .getCharacteristic(this.platform.Characteristic.Active)
-      .onSet(this.setAnimationModeOn.bind(this))
-      .onGet(this.getAnimationModeOn.bind(this));
+      .onSet(this.setAnimationModeOn.bind(this));
 
     this.asService
       .getCharacteristic(this.platform.Characteristic.RotationSpeed)
-      .onSet(this.setAnimationSpeed.bind(this))
-      .onGet(this.getAnimationSpeed.bind(this));
+      .onSet(this.setAnimationSpeed.bind(this));
 
     // adnimation mode
     const mdServiceName = accessory.context.device.name + ' Animation Mode';
@@ -112,13 +101,11 @@ export class Sp108ePlatformAccessory {
 
     this.mdService
       .getCharacteristic(this.platform.Characteristic.Active)
-      .onSet(this.setAnimationModeOn.bind(this))
-      .onGet(this.getAnimationModeOn.bind(this));
+      .onSet(this.setAnimationModeOn.bind(this));
 
     this.mdService
       .getCharacteristic(this.platform.Characteristic.ActiveIdentifier)
-      .onSet(this.setAnimationMode.bind(this))
-      .onGet(this.getAnimationMode.bind(this));
+      .onSet(this.setAnimationMode.bind(this));
 
     const animationModes = Object.entries({ [DREAM_MODE_NUMBER]: 'DREAM_MODE', ...ANIMATION_MODES });
     for (const [animationMode, animationModeName] of animationModes) {
@@ -137,6 +124,9 @@ export class Sp108ePlatformAccessory {
 
       this.mdService.addLinkedService(animationModeInputSource);
     }
+
+    this.initialize(accessory.context.device);
+    this.sync();
   }
 
   async initialize({ chip, colorOrder, segments, ledsPerSegment }) {
@@ -181,6 +171,51 @@ export class Sp108ePlatformAccessory {
     try {
       this.deviceStatus = await this.device.getStatus();
       this.lastPull = new Date();
+
+      this.rgbOn = this.deviceStatus.brightnessPercentage > 0;
+
+      const animationModeOn = this.deviceStatus.animationMode !== ANIMATION_MODE_STATIC ?
+        this.platform.api.hap.Characteristic.Active.ACTIVE :
+        this.platform.api.hap.Characteristic.Active.INACTIVE;
+
+      let animationMode = this.deviceStatus.animationMode;
+      if (typeof ANIMATION_MODES[this.deviceStatus.animationMode] === 'undefined') {
+        this.debug && this.platform.log.info('Get Characteristic ActiveIdentifier of md ->', DREAM_MODE_NUMBER);
+        animationMode = DREAM_MODE_NUMBER;
+      }
+
+      // rgbService
+      this.rgbService.updateCharacteristic(this.platform.Characteristic.On, this.rgbOn);
+      this.debug && this.platform.log.info('Update Characteristic On ->', this.rgbOn);
+
+      this.rgbService.updateCharacteristic(this.platform.Characteristic.Brightness, this.deviceStatus.brightnessPercentage);
+      this.debug && this.platform.log.info('Update Characteristic Brightness ->', this.deviceStatus.brightnessPercentage);
+
+      this.rgbService.updateCharacteristic(this.platform.Characteristic.Hue, this.deviceStatus.hsv.hue);
+      this.debug && this.platform.log.info('Update Characteristic Hue ->', this.deviceStatus.hsv.hue);
+
+      this.rgbService.updateCharacteristic(this.platform.Characteristic.Saturation, this.deviceStatus.hsv.saturation);
+      this.debug && this.platform.log.info('Update Characteristic Saturation ->', this.deviceStatus.hsv.saturation);
+
+      // wService
+      if (this.wService) {
+        this.wService.updateCharacteristic(this.platform.Characteristic.Brightness, this.deviceStatus.whiteBrightnessPercentage);
+        this.debug && this.platform.log.info('Update Characteristic Brightness of w ->', this.deviceStatus.whiteBrightnessPercentage);
+      }
+
+      // asService
+      this.asService.updateCharacteristic(this.platform.Characteristic.Active, animationModeOn);
+      this.debug && this.platform.log.info('Update Characteristic Active of as ->', animationModeOn);
+
+      this.asService.updateCharacteristic(this.platform.Characteristic.RotationSpeed, this.deviceStatus.animationSpeedPercentage);
+      this.debug && this.platform.log.info('Update Characteristic RotationSpeed of as ->', this.deviceStatus.animationSpeedPercentage);
+
+      // mdService
+      this.mdService.updateCharacteristic(this.platform.Characteristic.Active, animationModeOn);
+      this.debug && this.platform.log.info('Update Characteristic Active of md ->', animationModeOn);
+
+      this.mdService.updateCharacteristic(this.platform.Characteristic.ActiveIdentifier, animationMode);
+      this.debug && this.platform.log.info('Update Characteristic ActiveIdentifier of md ->', animationMode);
     } catch (e) {
       this.platform.log.error('Pull error ->', e);
     }
@@ -212,20 +247,6 @@ export class Sp108ePlatformAccessory {
     }
   }
 
-  async getOn(): Promise<CharacteristicValue> {
-    if (this.isOutOfSync()) {
-      throw new this.platform.api.hap.HapStatusError(this.platform.api.hap.HAPStatus.SERVICE_COMMUNICATION_FAILURE);
-    }
-
-    this.debug && this.platform.log.info('Get Status', this.deviceStatus);
-
-    this.rgbOn = this.deviceStatus.brightnessPercentage > 0;
-
-    this.debug && this.platform.log.info('Get Characteristic On ->', this.rgbOn);
-
-    return this.rgbOn;
-  }
-
   async setBrightness(value: CharacteristicValue) {
     try {
       await this.device.setBrightnessPercentage(value as number);
@@ -234,20 +255,6 @@ export class Sp108ePlatformAccessory {
     } catch (e) {
       throw new this.platform.api.hap.HapStatusError(this.platform.api.hap.HAPStatus.SERVICE_COMMUNICATION_FAILURE);
     }
-  }
-
-  async getBrightness(): Promise<CharacteristicValue> {
-    if (this.isOutOfSync()) {
-      throw new this.platform.api.hap.HapStatusError(this.platform.api.hap.HAPStatus.SERVICE_COMMUNICATION_FAILURE);
-    }
-
-    this.debug && this.platform.log.info('Get Status', this.deviceStatus);
-
-    const brightness = this.deviceStatus.brightnessPercentage;
-
-    this.debug && this.platform.log.info('Get Characteristic Brightness ->', brightness);
-
-    return brightness;
   }
 
   async setColor() {
@@ -273,20 +280,6 @@ export class Sp108ePlatformAccessory {
     }
   }
 
-  async getHue(): Promise<CharacteristicValue> {
-    if (this.isOutOfSync()) {
-      throw new this.platform.api.hap.HapStatusError(this.platform.api.hap.HAPStatus.SERVICE_COMMUNICATION_FAILURE);
-    }
-
-    this.debug && this.platform.log.info('Get Status', this.deviceStatus);
-
-    const hue = this.deviceStatus.hsv.hue;
-
-    this.debug && this.platform.log.info('Get Characteristic Hue ->', hue);
-
-    return hue;
-  }
-
   async setSaturation(value: CharacteristicValue) {
     try {
       this.debug && this.platform.log.info('Set Characteristic Saturation ->', value);
@@ -302,20 +295,6 @@ export class Sp108ePlatformAccessory {
     }
   }
 
-  async getSaturation(): Promise<CharacteristicValue> {
-    if (this.isOutOfSync()) {
-      throw new this.platform.api.hap.HapStatusError(this.platform.api.hap.HAPStatus.SERVICE_COMMUNICATION_FAILURE);
-    }
-
-    this.debug && this.platform.log.info('Get Status', this.deviceStatus);
-
-    const saturation = this.deviceStatus.hsv.saturation;
-
-    this.debug && this.platform.log.info('Get Characteristic Saturation ->', saturation);
-
-    return saturation;
-  }
-
   async setWhiteBrightness(value: CharacteristicValue) {
     try {
       await this.device.setWhiteBrightnessPercentage(value as number);
@@ -326,20 +305,6 @@ export class Sp108ePlatformAccessory {
     }
   }
 
-  async getWhiteBrightness(): Promise<CharacteristicValue> {
-    if (this.isOutOfSync()) {
-      throw new this.platform.api.hap.HapStatusError(this.platform.api.hap.HAPStatus.SERVICE_COMMUNICATION_FAILURE);
-    }
-
-    this.debug && this.platform.log.info('Get Status', this.deviceStatus);
-
-    const whiteBrightness = this.deviceStatus.whiteBrightnessPercentage;
-
-    this.debug && this.platform.log.info('Get Characteristic Brightness of w ->', whiteBrightness);
-
-    return whiteBrightness;
-  }
-
   async setAnimationSpeed(value: CharacteristicValue) {
     try {
       await this.device.setAnimationSpeedPercentage(value as number);
@@ -348,20 +313,6 @@ export class Sp108ePlatformAccessory {
     } catch (e) {
       throw new this.platform.api.hap.HapStatusError(this.platform.api.hap.HAPStatus.SERVICE_COMMUNICATION_FAILURE);
     }
-  }
-
-  async getAnimationSpeed(): Promise<CharacteristicValue> {
-    if (this.isOutOfSync()) {
-      throw new this.platform.api.hap.HapStatusError(this.platform.api.hap.HAPStatus.SERVICE_COMMUNICATION_FAILURE);
-    }
-
-    this.debug && this.platform.log.info('Get Status', this.deviceStatus);
-
-    const animationSpeed = this.deviceStatus.animationSpeedPercentage;
-
-    this.debug && this.platform.log.info('Get Characteristic RotationSpeed of as ->', animationSpeed);
-
-    return animationSpeed;
   }
 
   async setAnimationModeOn(value: CharacteristicValue) {
@@ -392,22 +343,6 @@ export class Sp108ePlatformAccessory {
     }
   }
 
-  async getAnimationModeOn(): Promise<CharacteristicValue> {
-    if (this.isOutOfSync()) {
-      throw new this.platform.api.hap.HapStatusError(this.platform.api.hap.HAPStatus.SERVICE_COMMUNICATION_FAILURE);
-    }
-
-    this.debug && this.platform.log.info('Get Status', this.deviceStatus);
-
-    const animationModeOn = this.deviceStatus.animationMode !== ANIMATION_MODE_STATIC ?
-      this.platform.api.hap.Characteristic.Active.ACTIVE :
-      this.platform.api.hap.Characteristic.Active.INACTIVE;
-
-    this.debug && this.platform.log.info('Get Characteristic Active of as/md ->', animationModeOn);
-
-    return animationModeOn;
-  }
-
   async setAnimationMode(value: CharacteristicValue) {
     try {
       this.platform.log.info('Checking animation mode', value, value.toString(), ANIMATION_MODES[value.toString()]);
@@ -421,24 +356,5 @@ export class Sp108ePlatformAccessory {
     } catch (e) {
       throw new this.platform.api.hap.HapStatusError(this.platform.api.hap.HAPStatus.SERVICE_COMMUNICATION_FAILURE);
     }
-  }
-
-  async getAnimationMode(): Promise<CharacteristicValue> {
-    if (this.isOutOfSync()) {
-      throw new this.platform.api.hap.HapStatusError(this.platform.api.hap.HAPStatus.SERVICE_COMMUNICATION_FAILURE);
-    }
-
-    this.debug && this.platform.log.info('Get Status', this.deviceStatus);
-
-    if (typeof ANIMATION_MODES[this.deviceStatus.animationMode] === 'undefined') {
-      this.debug && this.platform.log.info('Get Characteristic ActiveIdentifier of md ->', DREAM_MODE_NUMBER);
-      return DREAM_MODE_NUMBER;
-    }
-
-    const animationMode = this.deviceStatus.animationMode;
-
-    this.debug && this.platform.log.info('Get Characteristic ActiveIdentifier of md ->', animationMode);
-
-    return animationMode;
   }
 }
