@@ -17,6 +17,7 @@ const DREAM_MODE_NUMBER = 1;
  */
 export class Sp108ePlatformAccessory {
   private debug: boolean;
+  private rgbOn: boolean;
   private device: sp108e;
   private rgbService: Service;
   private wService!: Service;
@@ -34,6 +35,7 @@ export class Sp108ePlatformAccessory {
     private readonly accessory: PlatformAccessory,
   ) {
     this.debug = accessory.context.device.debug;
+    this.rgbOn = false;
 
     this.platform.log.info(accessory.context.device);
 
@@ -191,17 +193,18 @@ export class Sp108ePlatformAccessory {
   }
 
   async setOn(value: CharacteristicValue) {
-    if (Boolean(value) === this.deviceStatus.on) {
+    if (Boolean(value) === this.rgbOn && this.deviceStatus.on) {
       this.debug && this.platform.log.info('Characteristic On is already ->', value);
       return;
     }
 
     try {
-      if (value) {
+      if (!this.deviceStatus.on) {
         await this.device.on();
-      } else {
-        await this.device.off();
       }
+
+      await this.setBrightness(value ? 100 : 0);
+      this.rgbOn = Boolean(value);
 
       this.debug && this.platform.log.info('Set Characteristic On ->', value);
     } catch (e) {
@@ -216,14 +219,11 @@ export class Sp108ePlatformAccessory {
 
     this.debug && this.platform.log.info('Get Status', this.deviceStatus);
 
-    const isOn = this.deviceStatus.on;
+    this.rgbOn = this.deviceStatus.brightnessPercentage > 0;
 
-    this.debug && this.platform.log.info('Get Characteristic On ->', isOn);
+    this.debug && this.platform.log.info('Get Characteristic On ->', this.rgbOn);
 
-    // if you need to return an error to show the device as "Not Responding" in the Home app:
-    // throw new this.platform.api.hap.HapStatusError(this.platform.api.hap.HAPStatus.SERVICE_COMMUNICATION_FAILURE);
-
-    return isOn;
+    return this.rgbOn;
   }
 
   async setBrightness(value: CharacteristicValue) {

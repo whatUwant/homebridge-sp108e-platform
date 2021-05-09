@@ -1,7 +1,7 @@
 {
   "displayName": "Homebridge SP108E Platform",
   "name": "homebridge-sp108e-platform",
-  "version": "1.0.1",
+  "version": "1.1.0",
   "description": "Integrate your SP108E LED controllers into HomeKit",
   "license": "Apache-2.0",
   "repository": {
@@ -30,11 +30,11 @@
     "rgbw"
   ],
   "dependencies": {
-    "@types/color-convert": "^2.0.0",
     "color-convert": "^2.0.1",
     "promise-socket": "^7.0.0"
   },
   "devDependencies": {
+    "@types/color-convert": "^2.0.0",
     "@types/node": "^14.14.41",
     "@typescript-eslint/eslint-plugin": "^4.22.0",
     "@typescript-eslint/parser": "^4.22.0",
