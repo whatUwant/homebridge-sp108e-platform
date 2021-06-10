@@ -62,6 +62,10 @@ export class Sp108ePlatform implements DynamicPlatformPlugin {
     // loop over the discovered devices and register each one if it has not already been registered
     for (const device of devices) {
 
+      if (!this.checkConfig(device)) {
+        continue;
+      }
+
       // generate a unique id for the accessory this should be generated from
       // something globally unique, but constant, for example, the device serial
       // number or MAC address
@@ -106,5 +110,31 @@ export class Sp108ePlatform implements DynamicPlatformPlugin {
         this.api.registerPlatformAccessories(PLUGIN_NAME, PLATFORM_NAME, [accessory]);
       }
     }
+  }
+
+  checkConfig(config) {
+    const requiredProperties = [
+      'name',
+      'host',
+      'port',
+      'chip',
+      'colorOrder',
+      'segments',
+      'ledsPerSegment',
+    ];
+
+    if (!(config instanceof Object)) {
+      this.log.error('Invalid config', requiredProperties);
+      return false;
+    }
+
+    const missingProperties = requiredProperties.filter(p => !Object.keys(config).includes(p));
+
+    if (missingProperties.length > 0) {
+      this.log.error('Invalid config', missingProperties);
+      return false;
+    }
+
+    return true;
   }
 }
